@@ -1,4 +1,5 @@
 #include "irq.h"
+#include "../drivers/io.h"
 
 void irq_handler(void) {
     // Send EOI to slave PIC first (IRQ8-15)
