@@ -1,9 +1,8 @@
 OUTPUT_FORMAT(elf64-x86-64)
-ENTRY(_start)
+ENTRY(kernel_main)
 
 SECTIONS
 {
-    /* Kernel starts at 1MB */
     . = 1M;
 
     .text ALIGN(4K) : AT(ADDR(.text))

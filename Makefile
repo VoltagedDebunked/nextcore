@@ -13,7 +13,7 @@ MM_SOURCES = $(wildcard $(SRC_DIR)/mm/*.c)
 
 SOURCES = $(KERNEL_SOURCES) $(MEMORY_SOURCES) $(INTERRUPT_SOURCES) $(DRIVER_SOURCES) $(MM_SOURCES)
 OBJECTS = $(SOURCES:.c=.o)
-OBJECTS += $(SRC_DIR)/boot/boot.o $(SRC_DIR)/memory/gdt_asm.o $(SRC_DIR)/interrupt/idt_asm.o
+OBJECTS += $(SRC_DIR)/memory/gdt_asm.o $(SRC_DIR)/interrupt/idt_asm.o
 
 all: kernel.bin
 	@echo
@@ -25,9 +25,6 @@ kernel.bin: $(OBJECTS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
-
-$(SRC_DIR)/boot/boot.o: $(SRC_DIR)/boot/boot.asm
-	$(AS) $(ASFLAGS) $< -o $@
 
 $(SRC_DIR)/memory/gdt_asm.o: $(SRC_DIR)/memory/gdt.asm
 	$(AS) $(ASFLAGS) $< -o $@
