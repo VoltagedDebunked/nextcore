@@ -5,12 +5,16 @@
 #include "../drivers/keyboard.h"
 #include "../drivers/timer.h"
 #include "../mm/kheap.h"
+#include "../fs/ext4.h"
+#include "../fs/vfs/vfs.h"
 
 void kernel_main(void)
 {
     gdt_init();
     idt_init();
     init_paging();
+    ext4_init();
+    vfs_init();
     keyboard_init();
     timer_init();
     kheap_init();

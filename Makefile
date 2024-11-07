@@ -11,8 +11,9 @@ INTERRUPT_SOURCES = $(wildcard $(SRC_DIR)/interrupt/*.c)
 DRIVER_SOURCES = $(wildcard $(SRC_DIR)/drivers/*.c)
 MM_SOURCES = $(wildcard $(SRC_DIR)/mm/*.c)
 FS_SOURCES = $(wildcard $(SRC_DIR)/fs/*.c)
+VFS_SOURCES = $(wildcard $(SRC_DIR)/fs/vfs/*.c)
 
-SOURCES = $(KERNEL_SOURCES) $(MEMORY_SOURCES) $(INTERRUPT_SOURCES) $(DRIVER_SOURCES) $(MM_SOURCES) $(FS_SOURCES)
+SOURCES = $(KERNEL_SOURCES) $(MEMORY_SOURCES) $(INTERRUPT_SOURCES) $(DRIVER_SOURCES) $(MM_SOURCES) $(FS_SOURCES) $(VFS_SOURCES)
 OBJECTS = $(SOURCES:.c=.o)
 OBJECTS += $(SRC_DIR)/memory/gdt_asm.o $(SRC_DIR)/interrupt/idt_asm.o
 
