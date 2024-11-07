@@ -1,6 +1,17 @@
+#include "../memory/paging.h"
+
 #define VGA_MEMORY 0xB8000
+#define PAGE_PRESENT (1ULL << 0)
+#define PAGE_WRITABLE (1ULL << 1)
+
 static int console_row = 0;
 static int console_col = 0;
+
+void console_init(void) {
+    // Map VGA memory
+    paging_map_page(VGA_MEMORY, VGA_MEMORY,
+                    PAGE_PRESENT | PAGE_WRITABLE);
+}
 
 void put_char(char c) {
     unsigned char* vga = (unsigned char*)VGA_MEMORY;

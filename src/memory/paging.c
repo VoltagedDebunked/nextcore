@@ -1,130 +1,69 @@
 #include "paging.h"
+#include "pmm.h"
 
-uint64_t next_free_page;
+#define NULL 0
 
-uint64_t next_free_page = 0;
+#define PAGE_PRESENT (1ULL << 0)
+#define PAGE_WRITABLE (1ULL << 1)
+#define PAGE_USER (1ULL << 2)
 
-uint64_t* pml4;
+typedef struct {
+    uint64_t entries[512];
+} page_table_t;
 
-void init_paging(void)
-{
-    pml4 = (uint64_t*)0x1000;
-    for (int i = 0; i < 512; i++)
-    {
-        pml4[i] = 0;
+static page_table_t* kernel_p4;
+
+static page_table_t* get_next_level(page_table_t* table, uint64_t index, bool create) {
+    if (!(table->entries[index] & PAGE_PRESENT) && create) {
+        void* frame = pmm_alloc_frame();
+        if (!frame) return NULL;
+
+        table->entries[index] = (uint64_t)frame | PAGE_PRESENT | PAGE_WRITABLE;
+        page_table_t* next_table = (page_table_t*)((uint64_t)frame + KERNEL_VIRTUAL_BASE);
+        for (int i = 0; i < 512; i++) {
+            next_table->entries[i] = 0;
+        }
+        return next_table;
     }
-
-    uint64_t* pdp = (uint64_t*)0x2000;
-    pml4[0] = (uint64_t)pdp | 3;
-
-    for (int i = 0; i < 512; i++)
-     {
-        pdp[i] = 0;
-    }
-
-    uint64_t* pd = (uint64_t*)0x3000;
-    pdp[0] = (uint64_t)pd | 3;
-
-    for (int i = 0; i < 512; i++)
-    {
-        pd[i] = 0;
-    }
-
-    uint64_t* pt = (uint64_t*)0x4000;
-    pd[0] = (uint64_t)pt | 3;
-
-    for (int i = 0; i < 512; i++)
-    {
-        pt[i] = 0;
-    }
+    return (page_table_t*)((table->entries[index] & ~0xFFF) + KERNEL_VIRTUAL_BASE);
 }
 
-void switch_page_table(uint64_t* page_table) {
-    // Load the physical address of the page table into CR3 register
-    __asm__ volatile("mov %0, %%cr3" : : "r" (page_table));
+void init_paging(void) {
+    // Allocate P4 table
+    kernel_p4 = (page_table_t*)pmm_alloc_frame();
+
+    // Clear P4
+    for (int i = 0; i < 512; i++) {
+        kernel_p4->entries[i] = 0;
+    }
+
+    // Identity map first 2MB
+    for (uint64_t addr = 0; addr < 0x200000; addr += PAGE_SIZE) {
+        paging_map_page(addr, addr, PAGE_PRESENT | PAGE_WRITABLE);
+    }
+
+    // Map kernel to higher half
+    for (uint64_t addr = 0; addr < 0x1000000; addr += PAGE_SIZE) {
+        paging_map_page(addr, addr + KERNEL_VIRTUAL_BASE, PAGE_PRESENT | PAGE_WRITABLE);
+    }
+
+    // Load P4 into CR3
+    asm volatile("mov %0, %%cr3" : : "r"(kernel_p4));
 }
 
-extern uint64_t next_free_page;
+void* paging_map_page(uint64_t phys_addr, uint64_t virt_addr, uint64_t flags) {
+    uint64_t p4_index = (virt_addr >> 39) & 0x1FF;
+    uint64_t p3_index = (virt_addr >> 30) & 0x1FF;
+    uint64_t p2_index = (virt_addr >> 21) & 0x1FF;
+    uint64_t p1_index = (virt_addr >> 12) & 0x1FF;
 
+    page_table_t* p4 = kernel_p4;
+    page_table_t* p3 = get_next_level(p4, p4_index, true);
+    page_table_t* p2 = get_next_level(p3, p3_index, true);
+    page_table_t* p1 = get_next_level(p2, p2_index, true);
 
-void* allocate_page(void) {
-    void* page = (void*)next_free_page;
-    next_free_page += 4096; // 4KB page
-    return page;
-}
+    if (!p1) return NULL;
 
-uint64_t* get_page(uint64_t address, int make, uint64_t* dir) {
-    // Convert virtual address to indices
-    uint64_t pd_index = (address >> 39) & 0x1FF;   // Get PML4 index
-    uint64_t pdp_index = (address >> 30) & 0x1FF;  // Get PDPT index
-    uint64_t pt_index = (address >> 21) & 0x1FF;   // Get PD index
-    uint64_t p_index = (address >> 12) & 0x1FF;    // Get PT index
-
-    // Navigate page table hierarchy
-    uint64_t* pdp_table;
-    uint64_t* pd_table;
-    uint64_t* pt_table;
-
-    // Check if PML4 entry exists
-    if (!(dir[pd_index] & 0x1)) {
-        if (!make) {
-            return 0;
-        }
-        // Create new PDPT
-        pdp_table = (uint64_t*)allocate_page();
-        if (!pdp_table) {
-            return 0;
-        }
-        // Clear the new table
-        for (int i = 0; i < 512; i++) {
-            pdp_table[i] = 0;
-        }
-        // Set the PML4 entry (present + writable + user)
-        dir[pd_index] = ((uint64_t)pdp_table) | 0x7;
-    } else {
-        pdp_table = (uint64_t*)(dir[pd_index] & ~0xFFF);
-    }
-
-    // Check if PDPT entry exists
-    if (!(pdp_table[pdp_index] & 0x1)) {
-        if (!make) {
-            return 0;
-        }
-        // Create new PD
-        pd_table = (uint64_t*)allocate_page();
-        if (!pd_table) {
-            return 0;
-        }
-        // Clear the new table
-        for (int i = 0; i < 512; i++) {
-            pd_table[i] = 0;
-        }
-        // Set the PDPT entry (present + writable + user)
-        pdp_table[pdp_index] = ((uint64_t)pd_table) | 0x7;
-    } else {
-        pd_table = (uint64_t*)(pdp_table[pdp_index] & ~0xFFF);
-    }
-
-    // Check if PD entry exists
-    if (!(pd_table[pt_index] & 0x1)) {
-        if (!make) {
-            return 0;
-        }
-        // Create new PT
-        pt_table = (uint64_t*)allocate_page();
-        if (!pt_table) {
-            return 0;
-        }
-        // Clear the new table
-        for (int i = 0; i < 512; i++) {
-            pt_table[i] = 0;
-        }
-        // Set the PD entry (present + writable + user)
-        pd_table[pt_index] = ((uint64_t)pt_table) | 0x7;
-    } else {
-        pt_table = (uint64_t*)(pd_table[pt_index] & ~0xFFF);
-    }
-
-    // Return pointer to the page table entry
-    return &pt_table[p_index];
+    p1->entries[p1_index] = phys_addr | flags;
+    return (void*)virt_addr;
 }
