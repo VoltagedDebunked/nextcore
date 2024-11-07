@@ -20,7 +20,7 @@ cd nextcore
 make
 ```
 
-Now the kernel will be saved as `kernel.bin`, you can load it in your Operating System via a bootloader like `grub`, or a custom one. The entry point is `kernel_main`.
+Now the kernel will be saved as `NextCore`, you can load it in your Operating System via a bootloader like `grub`, or a custom one. The entry point is `kernel_main`.
 
 ## ✨ Features
 
@@ -34,4 +34,4 @@ NextCore is licensed under the **GPL-3.0 License**. See [LICENSE](LICENSE) for m
 
 ---
 
-<p align="center">Developed with ❤️ by VoltagedDebunked</p>
+<p align="center">Developed by VoltagedDebunked & Contributors</p>
