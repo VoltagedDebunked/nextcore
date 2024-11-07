@@ -37,4 +37,4 @@ $(SRC_DIR)/interrupt/idt_asm.o: $(SRC_DIR)/interrupt/idt.asm
 	$(AS) $(ASFLAGS) $< -o $@
 
 clean:
-	rm -f $(SRC_DIR)/*/*.o kernel.bin
+	rm -f $(SRC_DIR)/*/*/*.o kernel.bin $(SRC_DIR)/*/*.o $(SRC_DIR)/*.o
