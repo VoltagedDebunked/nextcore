@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        ".clang-format": "yaml",
+        "*.css": "tailwindcss",
+        "types.h": "c",
+        "io.h": "c",
+        "console.h": "c"
+    }
+}
