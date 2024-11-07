@@ -3,7 +3,6 @@
 #include "../interrupt/idt.h"
 #include "../memory/paging.h"
 #include "../drivers/keyboard.h"
-#include "../drivers/mouse.h"
 #include "../drivers/timer.h"
 #include "../mm/kheap.h"
 
@@ -13,7 +12,6 @@ void kernel_main(void)
     idt_init();
     init_paging();
     keyboard_init();
-    mouse_init();
     timer_init();
     kheap_init();
 
