@@ -1,0 +1,9 @@
+/.vscode/
+/.idea/
+
+*.o
+*.bin
+*.a
+
+*.log
+*.var
