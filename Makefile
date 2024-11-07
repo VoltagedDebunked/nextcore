@@ -15,7 +15,7 @@ SOURCES = $(KERNEL_SOURCES) $(MEMORY_SOURCES) $(INTERRUPT_SOURCES) $(DRIVER_SOUR
 OBJECTS = $(SOURCES:.c=.o)
 OBJECTS += $(SRC_DIR)/memory/gdt_asm.o $(SRC_DIR)/interrupt/idt_asm.o
 
-all: kernel.bin bzImage
+all: kernel.bin NextCore
 	@echo
 	@echo "NextCore Compiled Successfully!"
 	@echo
@@ -23,7 +23,7 @@ all: kernel.bin bzImage
 kernel.bin: $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
-bzImage: kernel.bin
+NextCore: kernel.bin
 	# Create a bzImage from the kernel ELF binary
 	# First, create a flat binary
 	objcopy -O binary kernel.bin kernel.raw
@@ -35,7 +35,7 @@ bzImage: kernel.bin
 	cat kernel.raw | gzip -9 > kernel.gz
 	cat kernel.gz >> bzImage.img
 	# Add bzImage header
-	dd if=bzImage.img of=bzImage bs=512 conv=notrunc
+	dd if=bzImage.img of=NextCore bs=512 conv=notrunc
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -47,4 +47,4 @@ $(SRC_DIR)/interrupt/idt_asm.o: $(SRC_DIR)/interrupt/idt.asm
 	$(AS) $(ASFLAGS) $< -o $@
 
 clean:
-	rm -f $(SRC_DIR)/*/*/*.o kernel.bin bzImage kernel.raw kernel.gz $(SRC_DIR)/*/*.o $(SRC_DIR)/*.o
+	rm -f $(SRC_DIR)/*/*/*.o kernel.bin NextCore kernel.raw kernel.gz $(SRC_DIR)/*/*.o $(SRC_DIR)/*.o bzImage bzImage.img
