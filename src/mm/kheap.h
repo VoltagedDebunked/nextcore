@@ -9,5 +9,6 @@ void kfree(void* ptr);
 void* krealloc(void* ptr, size_t new_size);
 size_t kheap_get_used_space(void);
 size_t kheap_get_free_space(void);
+void* memset(void* dest, int c, size_t n);
 
 #endif
